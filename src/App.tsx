@@ -1,11 +1,11 @@
 import React from 'react';
-import {SimpleForm} from './SimpleForm';
+import {RequestWithAxios} from './RequestWithAxios';
 import {Provider as PaperProvider} from 'react-native-paper';
 
 export const App = () => {
   return (
     <PaperProvider>
-      <SimpleForm />
+      <RequestWithAxios />
     </PaperProvider>
   );
 };
