@@ -1,42 +1,69 @@
 import React, {useEffect, useState} from 'react';
-import {SafeAreaView, StyleSheet} from 'react-native';
-import {HelperText, TextInput, Button} from 'react-native-paper';
+import {FlatList, SafeAreaView, StyleSheet} from 'react-native';
+import {HelperText, TextInput, Button, Text} from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const keyPerson = '@person';
+
+const initialValues = {
+  nome: '',
+  email: '',
+};
+
+type PersonType = typeof initialValues;
 
 export const SimpleForm = () => {
-  const [initialValues, setInitialValues] = useState<{
+  const [values, setValues] = useState<{
     nome: string;
     email: string;
-  }>({
-    nome: '',
-    email: '',
-  });
+  }>(initialValues);
 
   const [nomeError, setNomeError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [submitCount, setSubmitCount] = useState(0);
+  const [people, setPeople] = useState<PersonType[]>([]);
 
-  const onSubmit = () => {
-    if (initialValues.nome === '') {
+  const onSubmit = async () => {
+    if (values.nome === '') {
       setNomeError('Campo obrigatório.');
+      return;
     }
-    if (initialValues.email === '') {
+    if (values.email === '') {
       setEmailError('Campo obrigatório.');
-    } else if (initialValues.email !== '') {
-      const isValid = emailIsValid(initialValues.email);
+      return;
+    } else if (values.email !== '') {
+      const isValid = emailIsValid(values.email);
       if (!isValid) {
         setEmailError('Email inválido.');
+        return;
       }
     }
+    // TODO
+    // Desafio do dia => verificar se o AsyncStorage já contem item e adicionar
+    const array = [];
+    array.push(values);
+
+    await AsyncStorage.setItem(keyPerson, JSON.stringify(array));
+
+    setPeople(array);
+
+    setValues(initialValues);
+
     setSubmitCount(submitCount + 1);
+  };
+
+  const emailIsValid = (email: string) => {
+    const expression = /\S+@\S+\.\S+/;
+    return expression.test(email);
   };
 
   useEffect(() => {
     if (submitCount > 0) {
-      if (initialValues.nome !== '') {
+      if (values.nome !== '') {
         setNomeError('');
       }
-      if (initialValues.email !== '') {
-        const isValid = emailIsValid(initialValues.email);
+      if (values.email !== '') {
+        const isValid = emailIsValid(values.email);
         if (isValid) {
           setEmailError('');
         } else {
@@ -44,12 +71,7 @@ export const SimpleForm = () => {
         }
       }
     }
-  }, [initialValues, submitCount]);
-
-  const emailIsValid = (email: string) => {
-    const expression = /\S+@\S+\.\S+/;
-    return expression.test(email);
-  };
+  }, [values, submitCount]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -57,9 +79,10 @@ export const SimpleForm = () => {
         label="Nome"
         mode="outlined"
         error={!!nomeError}
+        value={values.nome}
         onChangeText={nome =>
-          setInitialValues({
-            email: initialValues.email,
+          setValues({
+            email: values.email,
             nome,
           })
         }
@@ -70,11 +93,12 @@ export const SimpleForm = () => {
       <TextInput
         label="Email"
         mode="outlined"
+        value={values.email}
         error={!!emailError}
         onChangeText={email =>
-          setInitialValues({
+          setValues({
             email,
-            nome: initialValues.nome,
+            nome: values.nome,
           })
         }
       />
@@ -84,6 +108,20 @@ export const SimpleForm = () => {
       <Button icon="content-save-outline" mode="contained" onPress={onSubmit}>
         Salvar
       </Button>
+      <FlatList
+        keyExtractor={item => String(item.email)}
+        data={people}
+        renderItem={({item}) => {
+          // TODO
+          // Desafio do dia => remover item da lista e do AsyncStorage
+          return (
+            <>
+              <Text>{item.nome}</Text>
+              <Text>{item.email}</Text>
+            </>
+          );
+        }}
+      />
     </SafeAreaView>
   );
 };
